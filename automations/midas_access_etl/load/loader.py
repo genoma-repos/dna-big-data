@@ -13,7 +13,7 @@ class MidasAccessLoader:
     def save_raw_payload(self, payload: RawPayload) -> None:
         self.repository.save_raw_payload(payload)
 
-    def load_curated(self, records: list[AccessRecord]) -> int:
+    def load_curated(self, records: list[AccessRecord]) -> int:        
         return self.repository.upsert_curated_records(records)
 
     def ensure_functionalities(self, names: list[str]) -> None:

@@ -75,6 +75,8 @@ class MidasWebClient:
             self.session.cookies.set("PHPSESSID", "offline-session")
             return True
         self.auth.login(usuario, senha)
+        print(f"[MIDAS] Login URL: {self.login_url}")
+        print(f"[MIDAS] Cookies: {self.session.cookies}")
         return True
 
     def definir_filtros(self, filters: AccessFilters) -> bool:
@@ -90,6 +92,9 @@ class MidasWebClient:
             raise MidasAccessQueryError(str(exc)) from exc
         if response.status_code >= 400:
             raise MidasAccessQueryError(f"Erro ao definir filtros: {response.status_code}")
+        
+        print(f"[MIDAS] Definir filtros URL: {self.filter_url}")
+        print(f"[MIDAS] Params: {filters.to_params()}")
         return True
 
     def buscar_acessos(self) -> dict[str, Any]:
@@ -108,4 +113,6 @@ class MidasWebClient:
             raise MidasAccessQueryError(str(exc)) from exc
         if not isinstance(payload, dict) or "data" not in payload:
             raise MidasAccessQueryError("Resposta inválida da consulta AJAX")
+        print(f"[MIDAS] Buscar acessos URL: {self.query_url}")
+        print(f"[MIDAS] Payload: {payload['data'][:1]}...")  # Print only the first 2 records for brevity
         return payload

@@ -48,7 +48,7 @@ class ExecutionMonitor:
             metadata=dict(metadata),
         )
         self.loader.create_alert(alert)
-        self.log("alert", LogStatus.WARNING, title, **metadata)
+        self.log("alert", LogStatus.WARNING, title, duration_ms=None, **metadata)
 
     def finish(
         self,
@@ -71,5 +71,5 @@ class ExecutionMonitor:
         self.execution.duration_seconds = (self.execution.finished_at - self.execution.started_at).total_seconds()
         self.execution.metadata.update(dict(metadata))
         self.loader.update_execution(self.execution)
-        self.log("finish", LogStatus.INFO, f"Pipeline finalizado com status {status.value}", **metadata)
+        self.log("finish", LogStatus.INFO, f"Pipeline finalizado com status {status.value}", duration_ms=None, **metadata)
         return self.execution

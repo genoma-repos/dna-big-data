@@ -8,7 +8,7 @@ Automação responsável por extrair, tratar, validar, monitorar e armazenar ace
 - `transform`: limpeza HTML, normalização, deduplicação e qualidade
 - `load`: persistência em Supabase/PostgreSQL ou memória local para desenvolvimento
 - `monitor`: logs estruturados, execução, alertas e métricas
-- `analytics`: agregações para indicadores diários
+- `analytics`: agregações para indicadores diários (DESATIVADO)
 - `flow`: fluxo Prefect 3 de alto nível
 
 ## Execução

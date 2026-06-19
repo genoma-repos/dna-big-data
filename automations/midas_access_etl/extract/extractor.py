@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from automations.midas_access_etl.monitor.execution_monitor import ExecutionMonitor
 from automations.midas_access_etl.constants import DEFAULT_SOURCE
 from automations.midas_access_etl.exceptions import MidasAccessQueryError
 from automations.midas_access_etl.extract.access_query import AccessQueryResult, build_raw_payload
 from automations.midas_access_etl.extract.client import MidasWebClient
 from automations.midas_access_etl.extract.filters import AccessFilters
+from automations.midas_access_etl.schemas import AlertSeverity
 
 
 @dataclass(slots=True)
@@ -19,8 +21,9 @@ class MidasAccessExtractor:
         senha: str,
         filters: AccessFilters,
         source: str = DEFAULT_SOURCE,
+        monitor: ExecutionMonitor | None = None,
     ) -> AccessQueryResult:
-        self.client.login(usuario, senha)
+        self.client.login(usuario, senha)        
         self.client.definir_filtros(filters)
         payload = self.client.buscar_acessos()
         rows = payload.get("data")

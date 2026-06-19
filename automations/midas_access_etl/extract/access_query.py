@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from automations.midas_access_etl.constants import DEFAULT_SOURCE
 from automations.midas_access_etl.extract.filters import AccessFilters
+from automations.midas_access_etl.monitor.execution_monitor import ExecutionMonitor
 from automations.midas_access_etl.schemas import RawPayload
 
 

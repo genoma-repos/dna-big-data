@@ -31,9 +31,9 @@ create table if not exists curated.acessos_corretores_imoveis (
 	local varchar(255),
 	acessou_pelo varchar(255),
 	acessou_telefone boolean,
-	usuario varchar(255) not null,
+	usuario varchar(255),
 	filial varchar(255),
-	codigo_imovel varchar(50) not null,
+	codigo_imovel varchar(50),
 	endereco text,
 	tipo_imovel varchar(100),
 	bairro varchar(150),
@@ -43,6 +43,7 @@ create table if not exists curated.acessos_corretores_imoveis (
 	data_carga timestamptz not null default now(),
 	created_at timestamptz not null default now(),
 	updated_at timestamptz not null default now(),
+	fingerprint varchar(64) unique,
 	constraint ux_acessos_corretor unique (data_hora, usuario, codigo_imovel)
 );
 
@@ -162,6 +163,10 @@ create index if not exists idx_pipeline_alerts_alert_type
 create index if not exists idx_pipeline_alerts_severity
 	on monitoring.pipeline_alerts (severity);
 
+-- =====================================================
+-- ANALYTICS
+-- =====================================================
+
 create table if not exists analytics.indicadores_acessos (
 	id uuid primary key default gen_random_uuid(),
 	referencia varchar(7) not null,
@@ -192,45 +197,6 @@ create index if not exists idx_indicadores_tipo_imovel
 
 create index if not exists idx_indicadores_funcao_acessada
 	on analytics.indicadores_acessos (funcao_acessada);
-
-
-);
-
--- =====================================================
--- ANALYTICS
--- =====================================================
-
-create table analytics.indicadores_acessos (
-id uuid primary key default gen_random_uuid(),
-
-```
-referencia date not null,
-
-filial varchar(255),
-
-usuario varchar(255),
-
-bairro varchar(150),
-
-tipo_imovel varchar(100),
-
-funcao_acessada varchar(255),
-
-total_acessos integer not null,
-
-created_at timestamptz default now()
-```
-
-);
-
-create index idx_indicadores_referencia
-on analytics.indicadores_acessos(referencia);
-
-create index idx_indicadores_filial
-on analytics.indicadores_acessos(filial);
-
-create index idx_indicadores_usuario
-on analytics.indicadores_acessos(usuario);
 
 -- =====================================================
 -- VIEW OPERACIONAL

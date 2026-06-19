@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
 from automations.midas_access_etl.schemas import AccessRecord, IndicadorAcesso, PipelineAlert, PipelineExecution, PipelineLog, RawPayload
+
 
 
 @runtime_checkable
@@ -91,7 +93,13 @@ class SupabaseMidasAccessRepository(MidasAccessRepositoryPort):
         if not records:
             return 0
         rows = [record.model_dump(mode="json") for record in records]
-        self._table("curated", self.curated_table).upsert(rows, on_conflict="data_hora,usuario,codigo_imovel").execute()
+        self._table(
+            "curated",
+            self.curated_table
+        ).upsert(
+            rows,
+            on_conflict="fingerprint"
+        ).execute()
         return len(rows)
 
     def upsert_functionality(self, name: str) -> None:

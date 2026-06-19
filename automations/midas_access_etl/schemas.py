@@ -41,6 +41,7 @@ class RawPayload(DomainModel):
 
 class AccessRecord(DomainModel):
     id: UUID = Field(default_factory=uuid4)
+    fingerprint: str | None = None
     data_hora: datetime
     funcao_acessada: str
     proprietario: str | None = None

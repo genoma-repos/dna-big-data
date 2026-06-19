@@ -9,4 +9,4 @@ logger = logging.getLogger(__name__)
 
 class ConsoleNotifier(NotificationPort):
     def send(self, title: str, message: str) -> None:
-        logger.info("notification", extra={"title": title, "message": message})
+        logger.info("notification", extra={"title": title, "notification_message": message})

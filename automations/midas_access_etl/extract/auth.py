@@ -12,7 +12,7 @@ from automations.midas_access_etl.exceptions import MidasAccessAuthError
 class SessionAuthenticator:
     session: requests.Session
     login_url: str = MIDAS_LOGIN_URL
-    timeout_seconds: int = 30
+    timeout_seconds: int = 300
 
     def login(self, usuario: str, senha: str) -> requests.Response:
         payload = {
@@ -24,6 +24,7 @@ class SessionAuthenticator:
         }
         try:
             response = self.session.post(self.login_url, data=payload, timeout=self.timeout_seconds)
+            
         except requests.RequestException as exc:  # pragma: no cover - network failure path
             raise MidasAccessAuthError(str(exc)) from exc
 
