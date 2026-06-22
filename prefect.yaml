@@ -1,0 +1,26 @@
+name: dna-big-data
+prefect-version: 3.7.4
+
+build: null
+push: null
+
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: .
+
+deployments:
+  - name: midas-access-etl-daily
+    version: "1.0.0"
+    tags:
+      - etl
+      - midas
+      - daily
+    description: ETL diário de acessos de corretores a imóveis do sistema Midas Web.
+    entrypoint: automations/midas_access_etl/flow.py:midas_access_etl_flow
+    schedule:
+      cron: "0 6 * * 1-5"
+      timezone: America/Sao_Paulo
+    work_pool:
+      name: default-agent-pool
+      work_queue_name: default
+    parameters: {}

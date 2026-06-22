@@ -10,7 +10,7 @@ from shared.utils.models import AutomationMetadata, AutomationResult, ExecutionR
 class Automation(Protocol):
     metadata: AutomationMetadata
 
-    def run(self) -> AutomationResult:
+    def run(self, data_de: str | None = None, data_ate: str | None = None) -> AutomationResult:
         ...
 
 
@@ -28,7 +28,10 @@ class AutomationRegistryPort(Protocol):
 
 @runtime_checkable
 class ExecutionRepositoryPort(Protocol):
-    def save(self, record: ExecutionRecord) -> None:
+    def create(self, record: ExecutionRecord) -> None:
+        ...
+
+    def update(self, record: ExecutionRecord) -> None:
         ...
 
     def list(self, automation_name: str | None = None) -> list[ExecutionRecord]:

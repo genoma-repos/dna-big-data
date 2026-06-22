@@ -6,12 +6,16 @@ from shared.utils.models import ExecutionRecord
 
 class InMemoryExecutionRepository(ExecutionRepositoryPort):
     def __init__(self) -> None:
-        self._records: list[ExecutionRecord] = []
+        self._records: dict[str, ExecutionRecord] = {}
 
-    def save(self, record: ExecutionRecord) -> None:
-        self._records.append(record)
+    def create(self, record: ExecutionRecord) -> None:
+        self._records[str(record.id)] = record
+
+    def update(self, record: ExecutionRecord) -> None:
+        self._records[str(record.id)] = record
 
     def list(self, automation_name: str | None = None) -> list[ExecutionRecord]:
+        records = list(self._records.values())
         if automation_name is None:
-            return list(self._records)
-        return [record for record in self._records if record.automation_name == automation_name]
+            return records
+        return [r for r in records if r.automation_name == automation_name]

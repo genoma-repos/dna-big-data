@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 prefect_flow: Any = None
 
@@ -48,18 +51,24 @@ def _build_repository(settings: MidasAccessSettings):
 @dataclass(slots=True)
 class MidasAccessPipelineRunner:
     settings: MidasAccessSettings = field(default_factory=get_midas_settings)
+    extractor: MidasAccessExtractor | None = None
 
-    def run(self) -> AutomationResult:
-        setup_structured_logging(self.settings.log_level)
+    def run(self, data_de: str | None = None, data_ate: str | None = None) -> AutomationResult:
+        setup_structured_logging(
+            self.settings.log_level,
+            sentry_dsn=self.settings.sentry_dsn,
+            app_env=self.settings.app_env,
+        )
         repository = _build_repository(self.settings)
         loader = MidasAccessLoader(repository=repository)
         monitor = ExecutionMonitor(loader=loader, pipeline_name=PIPELINE_NAME)
-        extractor = MidasAccessExtractor(
+        extractor = self.extractor or MidasAccessExtractor(
             client=MidasWebClient(
                 offline_mode=self.settings.offline_mode or not (self.settings.midas_usuario and self.settings.midas_senha),
                 login_url=self.settings.midas_login_url,
                 filter_url=self.settings.midas_filter_url,
                 query_url=self.settings.midas_query_url,
+                timeout_seconds=self.settings.execution_timeout_seconds,
             )
         )
         transformer = MidasAccessTransformer(
@@ -74,9 +83,11 @@ class MidasAccessPipelineRunner:
         loaded_count = 0
 
         try:
+            if not extractor.client.is_authenticated:
+                extractor.login(self.settings.midas_usuario, self.settings.midas_senha)
             filters = AccessFilters(
-                data_de=self.settings.default_data_de,
-                data_ate=self.settings.default_data_ate,
+                data_de=data_de or self.settings.default_data_de,
+                data_ate=data_ate or self.settings.default_data_ate,
                 filial=self.settings.default_filial,
                 corretor=self.settings.default_corretor,
                 imovel=self.settings.default_imovel,
@@ -84,37 +95,20 @@ class MidasAccessPipelineRunner:
                 acessou_tel=self.settings.default_acessou_tel,
             )
             extracted = extractor.extract(
-                usuario=self.settings.midas_usuario,
-                senha=self.settings.midas_senha,
                 filters=filters,
                 monitor=monitor,
             )
             extracted_count = extracted.total_records
-            print(f"[MIDAS] Total records extracted: {extracted_count}")
             loader.save_raw_payload(extracted.raw_payload)
-            print(f"[MIDAS] Raw payload saved")
-            # monitor.log("extract", LogStatus.INFO, "Payload bruto salvo", records=extracted.total_records)
+            monitor.log("extract", LogStatus.INFO, "Payload bruto salvo", records=extracted.total_records)
 
             transformed_records, quality_report = transformer.transform(extracted.rows)
-            print(f"[MIDAS] Total records transformed: {len(transformed_records)}")
             transformed_count = len(transformed_records)
             loader.ensure_functionalities(quality_report.unknown_functionalities)
-            print(f"[MIDAS] Unknown functionalities: {quality_report.unknown_functionalities}")
+            if quality_report.unknown_functionalities:
+                logger.warning("Novas funcionalidades detectadas: %s", quality_report.unknown_functionalities)
 
-            # if quality_report.unknown_functionalities:
-            #     monitor.alert(
-            #         alert_type="new_functionality",
-            #         severity=AlertSeverity.MEDIUM,
-            #         title="Nova funcionalidade identificada",
-            #         message=", ".join(quality_report.unknown_functionalities),
-            #     )
-
-            # if not quality_report.is_valid:
-            #     raise ValueError("; ".join(quality_report.errors))
-
-            print(f"[MIDAS] Transformed records: {transformed_records[:1]}...") 
             loaded_count = loader.load_curated(transformed_records)
-            print(f"[MIDAS] Total records loaded: {loaded_count}")
             monitor.log("load_curated", LogStatus.INFO, "Registros curados persistidos", records=loaded_count)
 
             # analytics_count = analytics_updater.update(transformed_records)
@@ -171,5 +165,9 @@ class MidasAccessPipelineRunner:
 
 
 @prefect_flow(name=PIPELINE_NAME)
-def midas_access_etl_flow(settings: MidasAccessSettings | None = None) -> AutomationResult:
-    return MidasAccessPipelineRunner(settings=settings or get_midas_settings()).run()
+def midas_access_etl_flow(
+    settings: MidasAccessSettings | None = None,
+    data_de: str | None = None,
+    data_ate: str | None = None,
+) -> AutomationResult:
+    return MidasAccessPipelineRunner(settings=settings or get_midas_settings()).run(data_de=data_de, data_ate=data_ate)

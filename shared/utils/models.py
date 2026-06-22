@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
+from uuid import UUID, uuid4
 
 
 class ExecutionStatus(str, Enum):
@@ -40,6 +41,7 @@ class ExecutionRecord:
     automation_name: str
     status: ExecutionStatus
     started_at: datetime
+    id: UUID = field(default_factory=uuid4)
     finished_at: datetime | None = None
     retries: int = 0
     payload: dict[str, Any] = field(default_factory=dict)

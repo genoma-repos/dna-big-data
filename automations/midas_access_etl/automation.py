@@ -20,5 +20,5 @@ class MidasAccessETL:
         )
     )
 
-    def run(self) -> AutomationResult:
-        return MidasAccessPipelineRunner(self.settings).run()
+    def run(self, data_de: str | None = None, data_ate: str | None = None) -> AutomationResult:
+        return MidasAccessPipelineRunner(self.settings).run(data_de=data_de, data_ate=data_ate)

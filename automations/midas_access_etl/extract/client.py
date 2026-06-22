@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -13,6 +14,8 @@ from automations.midas_access_etl.constants import (
 from automations.midas_access_etl.exceptions import MidasAccessQueryError
 from automations.midas_access_etl.extract.auth import SessionAuthenticator
 from automations.midas_access_etl.extract.filters import AccessFilters
+
+logger = logging.getLogger(__name__)
 
 
 def _sample_response() -> dict[str, Any]:
@@ -66,17 +69,27 @@ class MidasWebClient:
     offline_mode: bool = True
     timeout_seconds: int = 30
     auth: SessionAuthenticator = field(init=False, repr=False)
+    _authenticated: bool = field(default=False, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.auth = SessionAuthenticator(self.session, self.login_url, self.timeout_seconds)
 
+    @property
+    def is_authenticated(self) -> bool:
+        return self._authenticated or bool(self.session.cookies.get("PHPSESSID"))
+
     def login(self, usuario: str, senha: str) -> bool:
+        if self.is_authenticated:
+            logger.debug("Sessão já autenticada — login ignorado")
+            return True
         if self.offline_mode:
             self.session.cookies.set("PHPSESSID", "offline-session")
+            self._authenticated = True
+            logger.debug("Modo offline — sessão simulada")
             return True
         self.auth.login(usuario, senha)
-        print(f"[MIDAS] Login URL: {self.login_url}")
-        print(f"[MIDAS] Cookies: {self.session.cookies}")
+        self._authenticated = True
+        logger.info("Login realizado com sucesso")
         return True
 
     def definir_filtros(self, filters: AccessFilters) -> bool:
@@ -92,9 +105,7 @@ class MidasWebClient:
             raise MidasAccessQueryError(str(exc)) from exc
         if response.status_code >= 400:
             raise MidasAccessQueryError(f"Erro ao definir filtros: {response.status_code}")
-        
-        print(f"[MIDAS] Definir filtros URL: {self.filter_url}")
-        print(f"[MIDAS] Params: {filters.to_params()}")
+        logger.debug("Filtros aplicados: %s", filters.to_params())
         return True
 
     def buscar_acessos(self) -> dict[str, Any]:
@@ -113,6 +124,5 @@ class MidasWebClient:
             raise MidasAccessQueryError(str(exc)) from exc
         if not isinstance(payload, dict) or "data" not in payload:
             raise MidasAccessQueryError("Resposta inválida da consulta AJAX")
-        print(f"[MIDAS] Buscar acessos URL: {self.query_url}")
-        print(f"[MIDAS] Payload: {payload['data'][:1]}...")  # Print only the first 2 records for brevity
+        logger.debug("Acessos retornados: %d registros", len(payload.get("data", [])))
         return payload

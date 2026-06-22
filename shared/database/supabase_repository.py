@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import importlib
+import logging
 
 from shared.utils.contracts import ExecutionRepositoryPort
 from shared.utils.models import ExecutionRecord, ExecutionStatus
+
+logger = logging.getLogger(__name__)
 
 
 class SupabaseExecutionRepository(ExecutionRepositoryPort):
@@ -12,8 +15,9 @@ class SupabaseExecutionRepository(ExecutionRepositoryPort):
         self.client = supabase_module.create_client(url, key)
         self.table_name = table_name
 
-    def save(self, record: ExecutionRecord) -> None:
-        payload = {
+    def _to_payload(self, record: ExecutionRecord) -> dict:
+        return {
+            "id": str(record.id),
             "automation_name": record.automation_name,
             "status": record.status.value,
             "started_at": record.started_at.isoformat(),
@@ -22,7 +26,14 @@ class SupabaseExecutionRepository(ExecutionRepositoryPort):
             "payload": record.payload,
             "error_message": record.error_message,
         }
-        self.client.table(self.table_name).insert(payload).execute()
+
+    def create(self, record: ExecutionRecord) -> None:
+        self.client.table(self.table_name).insert(self._to_payload(record)).execute()
+
+    def update(self, record: ExecutionRecord) -> None:
+        self.client.table(self.table_name).upsert(
+            self._to_payload(record), on_conflict="id"
+        ).execute()
 
     def list(self, automation_name: str | None = None) -> list[ExecutionRecord]:
         query = self.client.table(self.table_name).select("*")

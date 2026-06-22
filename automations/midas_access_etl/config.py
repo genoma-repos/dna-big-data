@@ -19,6 +19,7 @@ class MidasAccessSettings(BaseSettings):
 
     app_env: str = Field(default="development", alias="APP_ENV")
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    sentry_dsn: str = Field(default="", alias="SENTRY_DSN")
     supabase_url: str = Field(default="", alias="SUPABASE_URL")
     supabase_key: str = Field(default="", alias="SUPABASE_KEY")
     midas_usuario: str = Field(default="", alias="MIDAS_USUARIO")

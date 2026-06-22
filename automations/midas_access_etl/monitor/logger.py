@@ -3,8 +3,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import logger
-
 try:
     import structlog
 except ModuleNotFoundError:  # pragma: no cover - environment fallback
@@ -29,7 +27,7 @@ class ColoredFormatter(logging.Formatter):
         return f"{color}{log_message}{self.RESET}"
 
 
-def setup_structured_logging(level: str = "INFO") -> None:
+def setup_structured_logging(level: str = "INFO", sentry_dsn: str = "", app_env: str = "development") -> None:
     """Configura logging estruturado com melhor formatação visual."""
     logging_level = getattr(logging, level.upper(), logging.INFO)
     
@@ -44,7 +42,10 @@ def setup_structured_logging(level: str = "INFO") -> None:
     root_logger.setLevel(logging_level)
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
-    
+
+    from shared.logging.sentry import init_sentry
+    init_sentry(dsn=sentry_dsn, environment=app_env)
+
     if structlog is None:
         return
     
